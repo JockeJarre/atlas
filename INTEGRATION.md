@@ -49,6 +49,22 @@ Edit `vaults` to point at your Markdown folders (absolute paths are safest):
 
 A vault is any folder of `.md` files; Obsidian is not required. See `wiki/Configuration-reference.md`.
 
+### Install on PATH (recommended)
+
+Point the harnesses at a stable path instead of the checkout. Link **the per-arch binary**, not the
+`bin/atlas` launcher script — the launcher resolves its siblings by its own directory, so a symlink
+to it breaks:
+
+```bash
+ln -s ~/git/atlas/bin/atlas-$(uname -m)-unknown-linux-gnu ~/.local/bin/atlas
+ln -s ~/git/atlas/bin/atlas-$(uname -m)-unknown-linux-gnu ~/.pi/agent/atlas.bin       # pi adapter default
+ln -s ~/git/atlas/bin/atlas-$(uname -m)-unknown-linux-gnu ~/.config/opencode/atlas.bin # opencode adapter default
+```
+
+Then use `~/.local/bin/atlas` as the MCP command in both configs. On Windows, symlinks need
+Developer Mode / admin; copying `bin\atlas.exe` to a folder on PATH (e.g. `%USERPROFILE%\.local\bin\atlas.exe`)
+or `mklink /H` (hard link, same volume) works too.
+
 ## 2. pi
 
 Add to `~/.pi/agent/mcp.json` (same file on Windows; write Windows paths with `\\`):
