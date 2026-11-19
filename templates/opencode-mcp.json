@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "atlas": {
+      "type": "local",
+      "command": ["/home/you/git/atlas/bin/atlas"],
+      "enabled": true,
+      "timeout": 20000
+    }
+  }
+}

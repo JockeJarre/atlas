@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "atlas": {
+      "command": "/home/you/git/atlas/bin/atlas",
+      "description": "Project memory and token-lean search over Markdown vaults and code: lookup, search, section, grep, symbol, recall, remember, journal, handoff.",
+      "toolExposure": { "hook": "hidden" }
+    }
+  }
+}

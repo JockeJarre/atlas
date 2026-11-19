@@ -1,5 +1,9 @@
 # atlas
 
+> **Fork note:** this fork ([JockeJarre/atlas](https://github.com/JockeJarre/atlas)) tracks upstream and adds
+> first-class setup instructions for **pi** and **opencode** on **Windows** and **Linux**: see [INTEGRATION.md](INTEGRATION.md)
+> and the config files under `templates/`. The MCP server needs no code changes; the Claude Code hooks are not ported.
+
 atlas makes long Claude Code sessions cheaper without changing how you work. It is a local MCP server and a
 set of Claude Code hooks: large tool output stays on disk under a short handle and the model gets a digest,
 code reads get exact item ranges instead of guessed windows, and memory (rules, decisions, journals,
