@@ -10,9 +10,9 @@ server itself, and it works out of the box:
 - No-args = MCP stdio server. Speaks MCP 2024-11-05, tools + resources, no network at query time.
 - 13 model-facing tools (`hook` is Claude-Code-only and should be hidden; see pi config).
 
-**Not ported:** the Claude Code hooks (`hooks/hooks.json`, SessionStart/PreToolUse/…) and the
-Claude plugin marketplace install. You get the full MCP tool surface; you do not get automatic
-output-digesting hooks or session-start injection. That is the current scope of this fork.
+**Hooks:** the Claude Code command hooks are not needed — this fork ships adapters that speak
+atlas's hook protocol (`atlas --hook`: event JSON on stdin, answer JSON on stdout) from pi
+extensions and opencode plugins: see section 7.
 
 ## 1. Get the binary
 
@@ -152,3 +152,45 @@ opencode run 'Call the tool atlas_search with {"query":"token savings","mode":"f
 - opencode: `opencode mcp list` (project scope only, see above); run with `--print-logs` for server stderr.
 - First search feels lexical only → embedding model still downloading; watch stderr.
 - `atlas: models: another atlas process is downloading models now` → harmless; one downloader at a time.
+
+## 7. Hook adapters (pi extension, opencode plugin)
+
+Two adapters translate each harness's events into atlas hook events and map the answers back:
+
+| adapter | file | injects recall context | digests big tool output | blocks tools | compaction notes | stop nudge |
+|---|---|---|---|---|---|---|
+| pi extension | `adapters/pi/atlas-hooks.ts` | ✓ (before_agent_start) | ✓ (tool_result: bash/read/grep/glob) | ✓ (tool_call deny) | ✓ (block compaction) | ✓ (one continuation) |
+| opencode plugin | `adapters/opencode/atlas-hooks.ts` | ✓ (session prompt hook) | ✓ (execute.after: shell/read/grep/glob) | ✓ (throw) | best effort | ✓ (session.prompt) |
+
+Both fail open: missing binary, atlas error, or timeout leaves the session untouched.
+
+### pi
+
+```bash
+cp ~/git/atlas/adapters/pi/atlas-hooks.ts ~/.pi/agent/extensions/     # Windows: %USERPROFILE%\.pi\agent\extensions\
+```
+
+The extension finds the binary at `$ATLAS_BIN`, `~/.pi/agent/atlas.bin`, or `~/git/atlas/bin/atlas`
+(`bin\atlas.exe` on Windows). pi loads `.ts` extensions directly; no build step.
+
+### opencode
+
+```bash
+mkdir -p ~/.config/opencode/plugins
+cp ~/git/atlas/adapters/opencode/atlas-hooks.ts ~/.config/opencode/plugins/
+# Windows: C:\Users\you\.config\opencode\plugins\
+```
+
+Binary lookup: `$ATLAS_BIN`, `~/.config/opencode/atlas.bin`, `~/git/atlas/bin/atlas(.exe)`.
+The plugin targets the **opencode 2.x** plugin API (`{id, setup}` default export, `tool.hook`
+/ `session.hook` on the promise bridge) — verified on v2.3.2. The recall context rides along
+with the submitted prompt inside an `<atlas-context>` block (visible in the transcript; that is
+the prompt hook, not a hidden injection). Large shell output is digested to a few hundred bytes
+with an atlas handle (`h:…`), which `recall op=log` can page back in.
+
+### Verifying
+
+Seed a memory that matches a prompt, e.g. via the MCP tools: `remember kind=rule key=test title="pi adapter test ruling"`.
+Then ask the harness something that matches the rule's phrases — the answer should reference it.
+For the digest: ask it to run `seq 1 20000` — the tool result should come back as a short digest
+starting with an `h:` handle, not thousands of lines.
